@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农作物灾害损失实时计算器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a5f23 0%, #3d8b40 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: -80px;
+            right: -80px;
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f0f7ee;
+            padding: 0 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #555;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            color: #2E7D32;
+            border-bottom: 3px solid #2E7D32;
+            background: #e8f5e9;
+        }
+        
+        .tab:hover:not(.active) {
+            background: #e0f2e1;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .calculators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .calculator {
+            flex: 1;
+            min-width: 300px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-top: 5px solid;
+            transition: transform 0.3s;
+        }
+        
+        .calculator:hover {
+            transform: translateY(-5px);
+        }
+        
+        .grain-calculator {
+            border-top-color: #FF9800;
+        }
+        
+        .economic-calculator {
+            border-top-color: #2196F3;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #2C3E50;
+            display: flex;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        h2 i {
+            margin-right: 12px;
+            font-size: 1.8rem;
+        }
+        
+        .input-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+        
+        label i {
+            margin-right: 8px;
+            color: #2E7D32;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px 14px 14px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            transition: all 0.3s;
+            background: #fff;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 45px;
+            color: #4CAF50;
+            font-size: 1.2rem;
+        }
+        
+        .area-inputs {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .area-group {
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f8f8;
+        }
+        
+        .area-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .area-header i {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .area-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .area-label {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .area-input {
+            width: 150px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: right;
+        }
+        
+        .area-unit {
+            margin-left: 8px;
+            color: #666;
+        }
+        
+        .results {
+            background: #f0f8ff;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 25px;
+            text-align: center;
+            border-left: 5px solid #2196F3;
+        }
+        
+        .result-title {
+            font-size: 1.3rem;
+            color: #2196F3;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .result-value {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 15px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .result-unit {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .formula {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 1rem;
+            text-align: left;
+        }
+        
+        .formula-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2E7D32;
+            display: flex;
+            align-items: center;
+        }
+        
+        .formula-content {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        .total-loss {
+            background: linear-gradient(135deg, #ff9a00 0%, #ff5722 100%);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            box-shadow: 0 8px 20px rgba(255, 87, 34, 0.4);
+        }
+        
+        .total-loss h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .total-loss-value {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        
+        .total-loss-unit {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+        
+        .explanation {
+            margin-top: 25px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #2E7D32;
+        }
+        
+        .explanation h3 {
+            color: #2E7D32;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .unit-info {
+            background: #fff8e1;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .btn i {
+            margin-right: 10px;
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #e53935, #c62828);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .auto-calculation-info {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border-left: 4px solid #2196F3;
+            font-weight: 500;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #777;
+            font-size: 1rem;
+            border-top: 1px solid #eee;
+            margin-top: 30px;
+            background: #f8f8f8;
+        }
+        
+        .area-relationship {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border-left: 4px solid #2196F3;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .calculators {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 12px;
+            }
+            
+            .result-value {
+                font-size: 2.2rem;
+            }
+            
+            .total-loss-value {
+                font-size: 2.8rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tractor"></i> 农作物灾害损失实时计算器</h1>
+            <p class="subtitle">输入参数后自动计算损失结果（单位：万元）</p>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="calculator">损失计算器</div>
+            <div class="tab" data-tab="explanation">计算说明</div>
+        </div>
+        
+        <div class="tab-content active" id="calculator-content">
+            <div class="auto-calculation-info">
+                <i class="fas fa-bolt"></i> 所有计算结果实时更新，无需手动点击计算按钮
+            </div>
+            
+            <div class="calculators">
+                <div class="calculator grain-calculator">
+                    <h2>
+                        <i class="fas fa-wheat-alt"></i> 粮食作物减产计算
+                    </h2>
+                    
+                    <div class="input-group">
+                        <label for="grain-yield"><i class="fas fa-weight"></i> 亩产 (吨/亩)</label>
+                        <i class="fas fa-balance-scale input-icon"></i>
+                        <input type="number" id="grain-yield" min="0" step="0.1" placeholder="请输入亩产量" value="0">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="grain-area"><i class="fas fa-border-all"></i> 种植面积 (亩)</label>
+                        <i class="fas fa-ruler-combined input-icon"></i>
+                        <input type="number" id="grain-area" min="0" step="1" placeholder="请输入种植面积" value="0">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label><i class="fas fa-fire"></i> 受灾面积</label>
+                        <div class="area-relationship">
+                            <p><i class="fas fa-info-circle"></i> 受灾面积包含成灾面积，成灾面积包含绝收面积，绝收面积包含完全被毁的面积</p>
+                        </div>
+                        <div class="area-inputs">
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-cloud-rain"></i> 受灾面积（减产10%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">受灾面积：</span>
+                                    <input type="number" class="area-input" id="grain-affected" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                            
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-cloud-showers-heavy"></i> 成灾面积（减产30%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">成灾面积：</span>
+                                    <input type="number" class="area-input" id="grain-formed" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                            
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-wind"></i> 绝收面积（减产80%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">绝收面积：</span>
+                                    <input type="number" class="area-input" id="grain-harvest" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                            
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-skull"></i> 完全被毁面积（减产100%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">完全被毁面积：</span>
+                                    <input type="number" class="area-input" id="grain-destroyed" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="grain-price"><i class="fas fa-tag"></i> 粮食单价 (元/吨)</label>
+                        <i class="fas fa-money-bill-wave input-icon"></i>
+                        <input type="number" id="grain-price" min="0" step="1" placeholder="请输入每吨价格" value="0">
+                    </div>
+                    
+                    <div class="results">
+                        <div class="result-title">粮食作物减产结果</div>
+                        <div class="result-value" id="grain-reduction">0.00</div>
+                        <div class="result-unit">吨</div>
+                        
+                        <div class="result-title">经济损失</div>
+                        <div class="result-value" id="grain-loss">0.00</div>
+                        <div class="result-unit">万元</div>
+                        
+                        <div class="formula">
+                            <div class="formula-title"><i class="fas fa-calculator"></i> 计算公式</div>
+                            <div class="formula-content">
+                                减产(吨) = 亩产 × [受灾面积×10% + 成灾面积×30% + 绝收面积×80% + 完全被毁面积×100%]<br>
+                                经济损失(万元) = (减产吨数 × 单价) / 10000
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator economic-calculator">
+                    <h2>
+                        <i class="fas fa-money-bill-wave"></i> 经济作物损失计算
+                    </h2>
+                    
+                    <div class="input-group">
+                        <label for="economic-yield"><i class="fas fa-weight"></i> 亩产 (吨/亩)</label>
+                        <i class="fas fa-balance-scale input-icon"></i>
+                        <input type="number" id="economic-yield" min="0" step="0.1" placeholder="请输入亩产量" value="0">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="economic-area"><i class="fas fa-border-all"></i> 种植面积 (亩)</label>
+                        <i class="fas fa-ruler-combined input-icon"></i>
+                        <input type="number" id="economic-area" min="0" step="1" placeholder="请输入种植面积" value="0">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label><i class="fas fa-fire"></i> 受灾面积</label>
+                        <div class="area-relationship">
+                            <p><i class="fas fa-info-circle"></i> 受灾面积包含成灾面积，成灾面积包含绝收面积，绝收面积包含完全被毁的面积</p>
+                        </div>
+                        <div class="area-inputs">
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-cloud-rain"></i> 受灾面积（减产10%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">受灾面积：</span>
+                                    <input type="number" class="area-input" id="economic-affected" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                            
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-cloud-showers-heavy"></i> 成灾面积（减产30%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">成灾面积：</span>
+                                    <input type="number" class="area-input" id="economic-formed" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                            
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-wind"></i> 绝收面积（减产80%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">绝收面积：</span>
+                                    <input type="number" class="area-input" id="economic-harvest" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                            
+                            <div class="area-group">
+                                <div class="area-header">
+                                    <i class="fas fa-skull"></i> 完全被毁面积（减产100%）
+                                </div>
+                                <div class="area-content">
+                                    <span class="area-label">完全被毁面积：</span>
+                                    <input type="number" class="area-input" id="economic-destroyed" min="0" step="1" value="0">
+                                    <span class="area-unit">亩</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="economic-price"><i class="fas fa-tag"></i> 单价 (元/吨)</label>
+                        <i class="fas fa-money-bill-wave input-icon"></i>
+                        <input type="number" id="economic-price" min="0" step="1" placeholder="请输入每吨价格" value="0">
+                    </div>
+                    
+                    <div class="results">
+                        <div class="result-title">经济损失</div>
+                        <div class="result-value" id="economic-result">0.00</div>
+                        <div class="result-unit">万元</div>
+                        
+                        <div class="formula">
+                            <div class="formula-title"><i class="fas fa-calculator"></i> 计算公式</div>
+                            <div class="formula-content">
+                                损失(万元) = (亩产 × [受灾面积×10% + 成灾面积×30% + 绝收面积×80% + 完全被毁面积×100%] × 单价) / 10000
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="total-loss">
+                <h3><i class="fas fa-file-invoice-dollar"></i> 农作物总经济损失</h3>
+                <div class="total-loss-value" id="total-loss">0.00</div>
+                <div class="total-loss-unit">万元</div>
+                <p>总经济损失 = 粮食作物经济损失 + 经济作物经济损失</p>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-reset" id="reset-btn">
+                    <i class="fas fa-redo"></i> 重置所有数据
+                </button>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="explanation-content">
+            <div class="explanation">
+                <h3><i class="fas fa-info-circle"></i> 计算说明</h3>
+                
+                <p>本计算器用于评估自然灾害对农作物造成的经济损失，所有经济损失结果均以<strong>万元</strong>为单位。</p>
+                
+                <div class="unit-info">
+                    <p><i class="fas fa-exclamation-circle"></i> <strong>单位说明：</strong>计算结果中的经济损失均已转换为万元（1万元 = 10,000元）</p>
+                </div>
+                
+                <h4>一、粮食作物减产计算</h4>
+                <p>粮食作物减产计算公式：<strong>减产(吨) = 亩产 × [受灾面积×10% + 成灾面积×30% + 绝收面积×80% + 完全被毁面积×100%]</strong></p>
+                <p>其中受灾强度分为四个等级：</p>
+                <ul>
+                    <li><strong>受灾</strong>：减产10%</li>
+                    <li><strong>成灾</strong>：减产30%</li>
+                    <li><strong>绝收</strong>：减产80%</li>
+                    <li><strong>完全被毁</strong>：减产100%</li>
+                </ul>
+                
+                <p>粮食作物经济损失计算公式：<strong>经济损失(万元) = (减产吨数 × 单价) / 10000</strong></p>
+                
+                <h4>二、经济作物损失计算</h4>
+                <p>经济作物直接经济损失计算公式：<strong>损失(万元) = (亩产 × [受灾面积×10% + 成灾面积×30% + 绝收面积×80% + 完全被毁面积×100%] × 单价) / 10000</strong></p>
+                <p>受灾强度等级与粮食作物相同。</p>
+                
+                <h4>三、总经济损失计算</h4>
+                <p>农作物总经济损失计算公式：<strong>总损失(万元) = 粮食作物经济损失 + 经济作物经济损失</strong></p>
+                
+                <h4>四、使用说明</h4>
+                <ol>
+                    <li>在粮食作物部分输入亩产（吨/亩）、种植面积（亩）和单价（元/吨）</li>
+                    <li>分别输入受灾面积、成灾面积、绝收面积和完全被毁面积（注意包含关系）</li>
+                    <li>在经济作物部分输入亩产（吨/亩）、种植面积（亩）和单价（元/吨）</li>
+                    <li>分别输入受灾面积、成灾面积、绝收面积和完全被毁面积（注意包含关系）</li>
+                    <li>系统自动实时计算并显示结果</li>
+                    <li>如需重新开始，点击"重置所有数据"按钮</li>
+                </ol>
+                
+                <p>本计算器可为农业灾害评估、保险理赔和灾后重建提供数据支持。</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p><i class="fas fa-seedling"></i> © 2025 农作物灾害损失实时计算器 | Powered by ZhengXi</p>
+        </footer>
+    </div>
+
+    <script>
+        // 获取所有DOM元素
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        const grainYieldInput = document.getElementById('grain-yield');
+        const grainAreaInput = document.getElementById('grain-area');
+        const grainAffectedInput = document.getElementById('grain-affected');
+        const grainFormedInput = document.getElementById('grain-formed');
+        const grainHarvestInput = document.getElementById('grain-harvest');
+        const grainDestroyedInput = document.getElementById('grain-destroyed');
+        const grainPriceInput = document.getElementById('grain-price');
+        const grainReductionResult = document.getElementById('grain-reduction');
+        const grainLossResult = document.getElementById('grain-loss');
+        
+        const economicYieldInput = document.getElementById('economic-yield');
+        const economicAreaInput = document.getElementById('economic-area');
+        const economicAffectedInput = document.getElementById('economic-affected');
+        const economicFormedInput = document.getElementById('economic-formed');
+        const economicHarvestInput = document.getElementById('economic-harvest');
+        const economicDestroyedInput = document.getElementById('economic-destroyed');
+        const economicPriceInput = document.getElementById('economic-price');
+        const economicResult = document.getElementById('economic-result');
+        
+        const totalLossResult = document.getElementById('total-loss');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        // 标签切换功能
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // 更新标签状态
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 更新内容显示
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === `${tabName}-content`) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // 为所有输入框添加事件监听（实时计算）
+        const inputs = [
+            grainYieldInput, grainAreaInput, grainAffectedInput, grainFormedInput, 
+            grainHarvestInput, grainDestroyedInput, grainPriceInput,
+            economicYieldInput, economicAreaInput, economicAffectedInput, 
+            economicFormedInput, economicHarvestInput, economicDestroyedInput, 
+            economicPriceInput
+        ];
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                // 验证面积关系
+                validateAreaRelationships();
+                // 实时计算
+                calculateAll();
+            });
+        });
+        
+        // 重置按钮事件监听
+        resetBtn.addEventListener('click', resetAll);
+        
+        // 验证面积关系
+        function validateAreaRelationships() {
+            // 粮食作物面积验证
+            const grainAffected = parseFloat(grainAffectedInput.value) || 0;
+            const grainFormed = parseFloat(grainFormedInput.value) || 0;
+            const grainHarvest = parseFloat(grainHarvestInput.value) || 0;
+            const grainDestroyed = parseFloat(grainDestroyedInput.value) || 0;
+            const grainArea = parseFloat(grainAreaInput.value) || 0;
+            
+            // 经济作物面积验证
+            const economicAffected = parseFloat(economicAffectedInput.value) || 0;
+            const economicFormed = parseFloat(economicFormedInput.value) || 0;
+            const economicHarvest = parseFloat(economicHarvestInput.value) || 0;
+            const economicDestroyed = parseFloat(economicDestroyedInput.value) || 0;
+            const economicArea = parseFloat(economicAreaInput.value) || 0;
+            
+            // 验证包含关系
+            if (grainFormed > grainAffected) {
+                alert('粮食作物：成灾面积不能大于受灾面积');
+                grainFormedInput.value = grainAffected;
+            }
+            
+            if (grainHarvest > grainFormed) {
+                alert('粮食作物：绝收面积不能大于成灾面积');
+                grainHarvestInput.value = grainFormed;
+            }
+            
+            if (grainDestroyed > grainHarvest) {
+                alert('粮食作物：完全被毁面积不能大于绝收面积');
+                grainDestroyedInput.value = grainHarvest;
+            }
+            
+            if (grainAffected > grainArea) {
+                alert('粮食作物：受灾面积不能大于种植面积');
+                grainAffectedInput.value = grainArea;
+            }
+            
+            // 经济作物验证
+            if (economicFormed > economicAffected) {
+                alert('经济作物：成灾面积不能大于受灾面积');
+                economicFormedInput.value = economicAffected;
+            }
+            
+            if (economicHarvest > economicFormed) {
+                alert('经济作物：绝收面积不能大于成灾面积');
+                economicHarvestInput.value = economicFormed;
+            }
+            
+            if (economicDestroyed > economicHarvest) {
+                alert('经济作物：完全被毁面积不能大于绝收面积');
+                economicDestroyedInput.value = economicHarvest;
+            }
+            
+            if (economicAffected > economicArea) {
+                alert('经济作物：受灾面积不能大于种植面积');
+                economicAffectedInput.value = economicArea;
+            }
+        }
+        
+        // 计算所有结果（单位：万元）
+        function calculateAll() {
+            // 计算粮食作物减产（吨）
+            const grainYield = parseFloat(grainYieldInput.value) || 0;
+            const grainAffected = parseFloat(grainAffectedInput.value) || 0;
+            const grainFormed = parseFloat(grainFormedInput.value) || 0;
+            const grainHarvest = parseFloat(grainHarvestInput.value) || 0;
+            const grainDestroyed = parseFloat(grainDestroyedInput.value) || 0;
+            
+            // 计算有效受灾面积（去除重叠部分）
+            const grainAffectedOnly = grainAffected - grainFormed;
+            const grainFormedOnly = grainFormed - grainHarvest;
+            const grainHarvestOnly = grainHarvest - grainDestroyed;
+            
+            const grainReduction = grainYield * (
+                grainAffectedOnly * 0.1 + 
+                grainFormedOnly * 0.3 + 
+                grainHarvestOnly * 0.8 + 
+                grainDestroyed * 1.0
+            );
+            
+            // 计算粮食作物经济损失（万元）
+            const grainPrice = parseFloat(grainPriceInput.value) || 0;
+            const grainLoss = (grainReduction * grainPrice) / 10000;
+            grainReductionResult.textContent = grainReduction.toFixed(2);
+            grainLossResult.textContent = grainLoss.toFixed(2);
+            
+            // 计算经济作物损失（万元）
+            const economicYield = parseFloat(economicYieldInput.value) || 0;
+            const economicAffected = parseFloat(economicAffectedInput.value) || 0;
+            const economicFormed = parseFloat(economicFormedInput.value) || 0;
+            const economicHarvest = parseFloat(economicHarvestInput.value) || 0;
+            const economicDestroyed = parseFloat(economicDestroyedInput.value) || 0;
+            const economicPrice = parseFloat(economicPriceInput.value) || 0;
+            
+            // 计算有效受灾面积（去除重叠部分）
+            const economicAffectedOnly = economicAffected - economicFormed;
+            const economicFormedOnly = economicFormed - economicHarvest;
+            const economicHarvestOnly = economicHarvest - economicDestroyed;
+            
+            const economicLoss = economicYield * (
+                economicAffectedOnly * 0.1 + 
+                economicFormedOnly * 0.3 + 
+                economicHarvestOnly * 0.8 + 
+                economicDestroyed * 1.0
+            ) * economicPrice / 10000;
+            
+            economicResult.textContent = economicLoss.toFixed(2);
+            
+            // 计算总经济损失（万元）
+            const totalLoss = grainLoss + economicLoss;
+            totalLossResult.textContent = totalLoss.toFixed(2);
+        }
+        
+        // 重置所有数据
+        function resetAll() {
+            // 重置输入框
+            grainYieldInput.value = "0";
+            grainAreaInput.value = "0";
+            grainAffectedInput.value = "0";
+            grainFormedInput.value = "0";
+            grainHarvestInput.value = "0";
+            grainDestroyedInput.value = "0";
+            grainPriceInput.value = "0";
+            
+            economicYieldInput.value = "0";
+            economicAreaInput.value = "0";
+            economicAffectedInput.value = "0";
+            economicFormedInput.value = "0";
+            economicHarvestInput.value = "0";
+            economicDestroyedInput.value = "0";
+            economicPriceInput.value = "0";
+            
+            // 重置结果
+            grainReductionResult.textContent = "0.00";
+            grainLossResult.textContent = "0.00";
+            economicResult.textContent = "0.00";
+            totalLossResult.textContent = "0.00";
+            
+            // 显示提示
+            alert('所有数据已重置为0');
+        }
+        
+        // 初始化计算
+        calculateAll();
+    </script>
+</body>
+</html>
